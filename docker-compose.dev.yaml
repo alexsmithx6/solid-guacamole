@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+
+  db:
+    container_name: db
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    env_file:
+      - env/dev/postgres.env
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  redis:
+    container_name: redis
+    build:
+      context: ./redis
+      dockerfile: Dockerfile
+    ports:
+      - "6379:6379"
+    env_file:
+      - env/dev/redis.env
+    volumes:
+      - redis_data:/data
+      # - ./ssl:/etc/ssl
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/backend
+      - ./ssl:/etc/ssl
+    ports:
+      - "8000" # Expose internally to Nginx
+    environment:
+      - ENV=DEV # Hardcoded environment variable
+    env_file:
+      - env/dev/django.env
+      - env/dev/postgres.env
+      - env/dev/redis.env
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000" # Expose internally to Nginx
+    volumes:
+      - ./frontend:/frontend
+    environment:
+      - ENV=DEV # Hardcoded environment variable (if needed)
+    depends_on:
+      - backend
+
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/ssl
+      - ./backend/backend_static:/backend/backend_static # Ensure this path is correct
+    ports:
+      - "443:443"
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  db_data:
+    driver: dev
+  redis_data:
+    driver: local

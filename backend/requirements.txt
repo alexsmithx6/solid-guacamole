@@ -1,0 +1,15 @@
+django
+django-cors-headers
+django-extensions
+django-sslserver
+djangorestframework
+psycopg2
+channels
+requests
+requests-oauthlib
+loguru
+python-dateutil
+# Werkzeug # required for python manage.py runserver_plus
+uvicorn
+uvicorn[standard]
+channels-redis
