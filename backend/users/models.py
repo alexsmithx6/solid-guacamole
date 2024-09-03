@@ -1,17 +1,9 @@
-from datetime import datetime
-from typing import Any
 # Project dependencies
 from django.db import models
-from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 # Logging
 from loguru import logger
-
-from oauthlib.oauth2 import Client
-from requests_oauthlib import OAuth2Session
-
-# class user(AbstractUser):
-#     pass
 
 # Create your models here.
 class app(models.Model):
@@ -71,15 +63,3 @@ class token(models.Model):
 
     def __str__(self) -> str:
         return f'{self.account} - token'
-
-# def get_or_create_user(app_name: str, account_uid: str):
-
-#     app_obj, created = app.objects.get_or_create(name=app_name)
-#     if created:
-#         logger.info(f'Created app entry in database: {app_obj}')
-    
-#     account_obj, created = account.objects.get_or_create(app=app_obj, uid=account_uid)
-#     if created:
-#         logger.info(f'Created account entry in database: {account_obj}')
-
-#     token_obj, created = token.objects.get_or_create()

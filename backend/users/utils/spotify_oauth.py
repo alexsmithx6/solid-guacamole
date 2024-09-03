@@ -16,35 +16,28 @@ SPOTIFY_API_ME_URI = urljoin(
 
 class SpotifyOAuth2Session(OAuth2Session):
 
-    def __init__(self, account_obj=None, *args, **kwargs):
+    def __init__(self, account_obj: account = None, *args, **kwargs) -> None:
 
+        # If there is a pre-existing account, we can instantiate some data
         if account_obj is not None:
             self.account_obj = account_obj
-            self.token_obj, created = token.objects.get_or_create(
-                account = self.account_obj,
-            )
+            # Check if there is a pre-existing token
+            if token.objects.filter(account=self.account_obj).exists():
+                # From database
+                self.token_obj = token.objects.get(account=self.account_obj)
+            # No pre-existing token - create a new one (don't want to save yet)
+            else:
+                self.token_obj = token(account=self.account_obj)
 
+        # Else this will be a brand new instance
         else:
             self.account_obj = None
             self.token_obj = token()
-            created = False
 
-        self.user_data = {}
-
-        if not created:
-            token_dict = {
-                'access_token': self.token_obj.access_token,
-                'token_type': 'Bearer',
-                'refresh_token': self.token_obj.refresh_token,
-                'expires_at': self.token_obj.expires_at
-            }
-
-        else:
-            token_dict = None
-
+        # Init super class
         super().__init__(
             client_id=settings.SPOTIFY_API_CLIENT_ID, 
-            token=token_dict, 
+            token=self.token_obj.__dict__, 
             auto_refresh_kwargs={
                 'client_id': settings.SPOTIFY_API_CLIENT_ID, 
                 'client_secret': settings.SPOTIFY_API_CLIENT_SECRET
@@ -54,38 +47,49 @@ class SpotifyOAuth2Session(OAuth2Session):
             *args, 
             **kwargs  
         )
-        
-    def token_updater(self, token_dict):
+
+    def get_user_details(self) -> dict:
+        # Send API request after successful authentication against Spotify API
+        resp = self.get(SPOTIFY_API_ME_URI)
+        resp.raise_for_status()
+        return resp.json()
+
+    def token_updater(self, token_dict) -> None:
 
         # Update user account as needed
         self.account_updater()
 
         logger.info(f'Updating token for user {self.account_obj}')
         # Save or get existing token
-        self.token_obj, _ = token.objects.get_or_create(
-            account = self.account_obj,
-        )
-        self.token_obj.access_token = str(token_dict['access_token'])
-        self.token_obj.refresh_token = str(token_dict['refresh_token'])
-        self.token_obj.expires_at = datetime.now().timestamp() + int(token_dict['expires_in'])
-        # Save token after data modifications
-        self.token_obj.save()
+        
+        if token.objects.filter(account=self.account_obj).exists():
+            self.token_obj = token.objects.get(account=self.account_obj)
+            self.token_obj.access_token = str(token_dict['access_token'])
+            self.token_obj.refresh_token = str(token_dict['refresh_token'])
+            self.token_obj.expires_at = datetime.now().timestamp() + int(token_dict['expires_in'])
+            # Save token after data modifications
+            self.token_obj.save()
+        else:
+            self.token_obj = token.objects.create(
+                account=self.account_obj,
+                access_token=str(token_dict['access_token']),
+                refresh_token=str(token_dict['refresh_token']),
+                expires_at=datetime.now().timestamp() + int(token_dict['expires_in']),
+            )
 
-    def account_updater(self):
-
-        # Send API request after successful authentication against Spotify API
-        resp = self.get(SPOTIFY_API_ME_URI)
-        resp.raise_for_status()
-        self.user_data = resp.json()
+    def account_updater(self) -> None:
+        
+        # Can assign user details now
+        user_data = self.get_user_details()
 
         logger.debug(f'Retrieving user data from Spotify API response')
         # Save or get existing user
         self.account_obj, created = account.objects.get_or_create(
-            uid = self.user_data['id'],
+            uid = user_data['id'],
             app = app.get_or_create_spotify()
         )
-        self.account_obj.email = self.user_data['email']
-        self.account_obj.name = self.user_data['display_name']
+        self.account_obj.email = user_data['email']
+        self.account_obj.name = user_data['display_name']
         # Save user after data modifications
         self.account_obj.save()
         if created:
@@ -130,5 +134,5 @@ def spotify_callback(redirect_uri: str, auth_uri: str):
     session.token_updater(session.token)
 
     logger.info(f'Successfully authenticated for user: {session.account_obj}')
-    return session.user_data
+    return session.get_user_details()
 

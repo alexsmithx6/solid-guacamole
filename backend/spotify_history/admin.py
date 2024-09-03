@@ -20,6 +20,7 @@ class albumAdmin(admin.ModelAdmin):
 @admin.register(artist_album)
 class artist_albumAdmin(admin.ModelAdmin):
     list_display = ('id', 'artist', 'album')
+    list_filter = ('artist', 'album')
 
 
 @admin.register(song)

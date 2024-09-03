@@ -39,11 +39,7 @@ def internal_dataload_process(uid: int, num_items: int):
             url=SPOTIFY_API_RECENTLY_PLAYED_TRACKS_URI,
             params={
                 'limit': str(num_items)
-            },
-            headers={
-                'Authorization': f'Bearer {session.token_obj.access_token}',
-                'Accept': 'aplication/json',
-            },       
+            }
         )
         # Raise for status in event of an error
         response.raise_for_status()
@@ -58,8 +54,6 @@ def internal_dataload_process(uid: int, num_items: int):
 
         # Re-throw exception
         raise
-
-        
 
     logger.debug('Executing dataload procedure for Spotify API response')
     execute_process_spotify_api_response(uid, data)

@@ -38,42 +38,6 @@ class SongListView(generics.ListAPIView):
 class SongDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = song.objects.all()
     serializer_class = SongDetailSerializer
-
-# class ListenHistoryListView(generics.ListAPIView):
-#     serializer_class = ListenHistorySerializer
-    
-#     def get_queryset(self):
-#         uid = self.kwargs['uid']
-#         # Retrieve user object
-#         account_obj = get_user_model().objects.get(
-#             uid=uid, 
-#             app=app.get_or_create_spotify()
-#         )
-#         queryset = listen_history.objects.filter(account=account_obj).order_by('-timestamp')
-#         # Get the 'n' parameter from the request query parameters
-#         n = self.request.query_params.get('n', None)
-#         start_time = self.request.query_params.get('start_time', None)
-
-#         if start_time is not None:
-#             try:
-#                 start_time = parse(start_time)
-#                 # listen_history.timestamp GREATER THAN input start_time:
-#                 queryset = queryset.filter(timestamp__gt=start_time)
-#             except:
-#                 raise Exception('Invalid type for start_time')
-
-#         if n is not None:
-#             try:
-#                 n = int(n)
-#             except:
-#                 raise Exception('Invalid type for n')
-
-#             if n > 0:
-#                 queryset = queryset[:n]
-#             else:
-#                 raise Exception('Invalid value for n')
-
-#         return queryset
     
 class History(APIView):
     """
@@ -102,8 +66,8 @@ class History(APIView):
         except Exception:
             logger.exception(f'Exception encountered')
             return Response(
-                status=status.HTTP_404_NOT_FOUND,
-                data={'error': f'User {uid} not found'}
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                data={'error': f'Internal server error'}
             )
             
         queryset = listen_history.objects.filter(account=account_obj).order_by('-timestamp')

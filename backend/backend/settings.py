@@ -25,6 +25,7 @@ if os.environ['ENV'] == 'local':
     # Load environment variables from .env file
     load_dotenv(os.path.join(BASE_DIR.parent, 'env', 'local', 'django.env'), override=True)
     load_dotenv(os.path.join(BASE_DIR.parent, 'env', 'local', 'postgres.env'), override=True)
+    load_dotenv(os.path.join(BASE_DIR.parent, 'env', 'local', 'redis.env'), override=True)
 
 # Configure logger with the log level from environment variable
 logger.remove()  # Remove the default logger
@@ -35,7 +36,7 @@ logger.add(sys.stdout, level=os.environ['LOG_LEVEL'].upper())
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-n)+wbw3l!17a2hrh5^1yln5ee4uufjecyxl=hg9m+(=4bp)n(_'
-
+APPEND_SLASH = True
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -140,7 +141,7 @@ SPOTIFY_APP_NAME = 'spotify'
 # Spotify API Client Configs
 SPOTIFY_API_CLIENT_ID = os.environ['SPOTIFY_API_CLIENT_ID']
 SPOTIFY_API_CLIENT_SECRET = os.environ['SPOTIFY_API_CLIENT_SECRET']
-SPOTIFY_API_SCOPE = ['user-read-private', 'user-read-email', 'user-read-recently-played']
+SPOTIFY_API_SCOPE = list(str(os.environ['SPOTIFY_API_SCOPE']).split(','))
 # Spotify API URLs
 SPOTIFY_API_BASE_URL = os.environ['SPOTIFY_API_BASE_URL']
 SPOTIFY_API_AUTH_URL = os.environ['SPOTIFY_API_AUTH_URL']

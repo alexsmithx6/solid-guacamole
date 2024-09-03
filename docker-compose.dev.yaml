@@ -54,6 +54,9 @@ services:
       - ./frontend:/frontend
     environment:
       - ENV=DEV # Hardcoded environment variable (if needed)
+    env_file:
+      - env/dev/frontend.env
+      # - env/dev/django.env
     depends_on:
       - backend
 
@@ -73,6 +76,6 @@ services:
 
 volumes:
   db_data:
-    driver: dev
+    driver: local
   redis_data:
     driver: local
